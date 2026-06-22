@@ -9,14 +9,17 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useAppStore } from '@/store/useAppStore';
 
 function GuestHome() {
   const navigate = useNavigate();
+  const { fetchBillByOrder, loading } = useAppStore();
   const [orderId, setOrderId] = useState('');
 
-  const handleQuery = () => {
+  const handleQuery = async () => {
     if (orderId.trim()) {
-      navigate('/guest/bill');
+      await fetchBillByOrder(orderId.trim());
+      navigate(`/guest/bill?order=${encodeURIComponent(orderId.trim())}`);
     }
   };
 
@@ -77,7 +80,7 @@ function GuestHome() {
                 size="lg"
                 fullWidth
                 onClick={handleQuery}
-                disabled={!orderId.trim()}
+                disabled={!orderId.trim() || loading.bills}
               >
                 <Search className="w-5 h-5" />
                 查询账单

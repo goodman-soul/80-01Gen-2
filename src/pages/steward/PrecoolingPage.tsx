@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Thermometer,
@@ -21,7 +22,11 @@ import { cn } from '@/lib/utils';
 
 function PrecoolingPage() {
   const navigate = useNavigate();
-  const { bookings, startPrecooling, properties } = useAppStore();
+  const { bookings, startPrecooling, properties, fetchPrecoolingBookings } = useAppStore();
+
+  useEffect(() => {
+    fetchPrecoolingBookings();
+  }, [fetchPrecoolingBookings]);
 
   const upcomingBookings = bookings.filter(b => b.status === 'upcoming');
 

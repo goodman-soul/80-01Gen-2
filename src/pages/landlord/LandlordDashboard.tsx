@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Zap,
@@ -21,21 +22,34 @@ import { cn } from '@/lib/utils';
 
 function LandlordDashboard() {
   const navigate = useNavigate();
-  const { properties, devices, alerts } = useAppStore();
+  const {
+    properties,
+    devices,
+    alerts,
+    overviewMetrics,
+    deviceStats,
+    fetchOverview,
+    fetchAlerts,
+    loading,
+  } = useAppStore();
 
-  const totalElectricity = properties.reduce((sum, p) => sum + p.todayElectricity, 0);
-  const totalWater = properties.reduce((sum, p) => sum + p.todayWater, 0);
-  const totalSolar = properties.reduce((sum, p) => sum + p.todaySolar, 0);
-  const savingRate = Math.round((totalSolar / totalElectricity) * 100);
+  useEffect(() => {
+    fetchOverview();
+    fetchAlerts({ acknowledged: false });
+  }, []);
 
-  const deviceStats = {
-    ac: devices.filter(d => d.type === 'ac').length,
-    water_heater: devices.filter(d => d.type === 'water_heater').length,
-    pv: devices.filter(d => d.type === 'pv').length,
-    water_tank: devices.filter(d => d.type === 'water_tank').length,
-    online: devices.filter(d => d.status === 'online').length,
-    warning: devices.filter(d => d.status === 'warning' || d.status === 'error').length,
-  };
+  const totalElectricity = overviewMetrics?.totalElectricity ?? 0;
+  const totalWater = overviewMetrics?.totalWater ?? 0;
+  const totalSolar = overviewMetrics?.totalSolar ?? 0;
+  const savingRate = overviewMetrics?.savingRate ?? 0;
+
+  const typedDeviceStats = deviceStats?.types || [];
+  const acCount = typedDeviceStats.find(t => t.type === 'ac')?.total ?? 0;
+  const whCount = typedDeviceStats.find(t => t.type === 'water_heater')?.total ?? 0;
+  const pvCount = typedDeviceStats.find(t => t.type === 'pv')?.total ?? 0;
+  const wtCount = typedDeviceStats.find(t => t.type === 'water_tank')?.total ?? 0;
+  const onlineCount = deviceStats?.online ?? 0;
+  const warningCount = deviceStats?.warning ?? 0;
 
   const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged);
 
@@ -155,7 +169,7 @@ function LandlordDashboard() {
                     <Thermometer className="w-5 h-5 text-ocean-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-800">{deviceStats.ac}</p>
+                    <p className="text-2xl font-bold text-slate-800">{acCount}</p>
                     <p className="text-xs text-slate-500">空调</p>
                   </div>
                 </div>
@@ -164,7 +178,7 @@ function LandlordDashboard() {
                     <Droplets className="w-5 h-5 text-coral-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-800">{deviceStats.water_heater}</p>
+                    <p className="text-2xl font-bold text-slate-800">{whCount}</p>
                     <p className="text-xs text-slate-500">热水器</p>
                   </div>
                 </div>
@@ -173,7 +187,7 @@ function LandlordDashboard() {
                     <Sun className="w-5 h-5 text-sand-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-800">{deviceStats.pv}</p>
+                    <p className="text-2xl font-bold text-slate-800">{pvCount}</p>
                     <p className="text-xs text-slate-500">光伏</p>
                   </div>
                 </div>
@@ -182,7 +196,7 @@ function LandlordDashboard() {
                     <Waves className="w-5 h-5 text-mint-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-800">{deviceStats.water_tank}</p>
+                    <p className="text-2xl font-bold text-slate-800">{wtCount}</p>
                     <p className="text-xs text-slate-500">蓄水池</p>
                   </div>
                 </div>
@@ -194,14 +208,14 @@ function LandlordDashboard() {
                     <span className="w-2 h-2 rounded-full bg-mint-500 animate-pulse-soft" />
                     <span className="text-sm text-slate-600">在线设备</span>
                   </div>
-                  <span className="font-semibold text-mint-600">{deviceStats.online} 台</span>
+                  <span className="font-semibold text-mint-600">{onlineCount} 台</span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-sand-500 animate-pulse-soft" />
                     <span className="text-sm text-slate-600">异常设备</span>
                   </div>
-                  <span className="font-semibold text-sand-600">{deviceStats.warning} 台</span>
+                  <span className="font-semibold text-sand-600">{warningCount} 台</span>
                 </div>
               </div>
             </Card.Content>

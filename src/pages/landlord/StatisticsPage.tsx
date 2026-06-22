@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BarChart,
   Bar,
@@ -29,20 +29,27 @@ import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
 
 function StatisticsPage() {
-  const { monthlyStats } = useAppStore();
+  const { monthlyStats, fetchMonthlyStats } = useAppStore();
   const [viewMode, setViewMode] = useState<'electricity' | 'water' | 'cost'>('electricity');
 
-  const sortedProperties = [...monthlyStats.properties].sort(
+  useEffect(() => {
+    fetchMonthlyStats();
+  }, [fetchMonthlyStats]);
+
+  const properties = monthlyStats?.properties ?? [];
+  const trend = monthlyStats?.trend ?? [];
+
+  const sortedProperties = [...properties].sort(
     (a, b) => b.savingRate - a.savingRate
   );
 
-  const totalElectricity = monthlyStats.properties.reduce((sum, p) => sum + p.electricity, 0);
-  const totalWater = monthlyStats.properties.reduce((sum, p) => sum + p.water, 0);
-  const totalCost = monthlyStats.properties.reduce((sum, p) => sum + p.cost, 0);
-  const totalSolar = monthlyStats.properties.reduce((sum, p) => sum + p.solar, 0);
-  const avgSavingRate = Math.round(
-    monthlyStats.properties.reduce((sum, p) => sum + p.savingRate, 0) / monthlyStats.properties.length
-  );
+  const totalElectricity = properties.reduce((sum, p) => sum + p.electricity, 0);
+  const totalWater = properties.reduce((sum, p) => sum + p.water, 0);
+  const totalCost = properties.reduce((sum, p) => sum + p.cost, 0);
+  const totalSolar = properties.reduce((sum, p) => sum + p.solar, 0);
+  const avgSavingRate = properties.length > 0
+    ? Math.round(properties.reduce((sum, p) => sum + p.savingRate, 0) / properties.length)
+    : 0;
 
   const viewModeConfig = {
     electricity: { label: '用电量', key: 'electricity', unit: 'kWh', color: '#0ea5e9' },
@@ -130,7 +137,7 @@ function StatisticsPage() {
             <Card.Content>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyStats.properties} barSize={40}>
+                  <BarChart data={properties} barSize={40}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                     <XAxis
                       dataKey="propertyName"
@@ -231,7 +238,7 @@ function StatisticsPage() {
         <Card.Content>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <ReLineChart data={monthlyStats.trend}>
+              <ReLineChart data={trend}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis
                   dataKey="month"

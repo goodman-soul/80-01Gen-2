@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   Zap,
@@ -31,7 +32,36 @@ import { cn } from '@/lib/utils';
 
 function BillPage() {
   const navigate = useNavigate();
-  const { energyBill } = useAppStore();
+  const [searchParams] = useSearchParams();
+  const { energyBill, fetchBillByOrder, loading } = useAppStore();
+  const orderNumber = searchParams.get('order');
+
+  useEffect(() => {
+    if (orderNumber && !energyBill) {
+      fetchBillByOrder(orderNumber);
+    }
+  }, [orderNumber, energyBill, fetchBillByOrder]);
+
+  if (loading.bills || !energyBill) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-mint-50 via-white to-ocean-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-ocean-200 border-t-ocean-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-500">
+            {loading.bills ? '加载中...' : '暂无账单数据'}
+          </p>
+          {!loading.bills && (
+            <button
+              onClick={() => navigate('/guest')}
+              className="mt-4 text-ocean-500 hover:text-ocean-600 text-sm font-medium"
+            >
+              返回查询
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const pieData = [
     { name: '电费', value: energyBill.electricityCost, color: '#0ea5e9' },

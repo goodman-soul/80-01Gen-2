@@ -292,7 +292,7 @@ export const mockAlerts: Alert[] = [
     deviceId: 'd5',
     propertyId: 'p1',
     timestamp: '2024-01-15T10:00:00Z',
-    acknowledged: false,
+    acknowledged: 0,
   },
   {
     id: 'a2',
@@ -303,7 +303,7 @@ export const mockAlerts: Alert[] = [
     deviceId: 'd7',
     propertyId: 'p2',
     timestamp: '2024-01-15T09:15:00Z',
-    acknowledged: false,
+    acknowledged: 0,
   },
   {
     id: 'a3',
@@ -313,7 +313,7 @@ export const mockAlerts: Alert[] = [
     description: '日出海景公寓光伏板效率下降5%，建议安排清洁维护',
     propertyId: 'p3',
     timestamp: '2024-01-15T08:00:00Z',
-    acknowledged: true,
+    acknowledged: 1,
   },
   {
     id: 'a4',
@@ -323,7 +323,7 @@ export const mockAlerts: Alert[] = [
     description: '今日有3间房间需要预冷，请提前安排',
     propertyId: 'p1',
     timestamp: '2024-01-15T08:30:00Z',
-    acknowledged: true,
+    acknowledged: 1,
   },
   {
     id: 'a5',
@@ -334,7 +334,7 @@ export const mockAlerts: Alert[] = [
     deviceId: 'd9',
     propertyId: 'p2',
     timestamp: '2024-01-15T10:15:00Z',
-    acknowledged: false,
+    acknowledged: 0,
   },
 ];
 

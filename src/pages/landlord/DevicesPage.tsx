@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Tv,
@@ -29,7 +29,6 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import DeviceCard from '@/components/DeviceCard';
 import { useAppStore } from '@/store/useAppStore';
-import { generate24HourData } from '@/data/mockData';
 import type { DeviceType } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -43,8 +42,23 @@ const deviceTypes: { type: DeviceType | 'all'; label: string; icon: typeof Tv }[
 
 function DevicesPage() {
   const navigate = useNavigate();
-  const { devices, properties, selectedDeviceType, setSelectedDeviceType } = useAppStore();
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const {
+    devices,
+    properties,
+    selectedDeviceType,
+    setSelectedDeviceType,
+    deviceListStats,
+    chartsData,
+    fetchDevices,
+    fetchDeviceCharts,
+    selectedPropertyId,
+    setSelectedPropertyId,
+  } = useAppStore();
+
+  useEffect(() => {
+    fetchDevices();
+    fetchDeviceCharts();
+  }, [fetchDevices, fetchDeviceCharts, selectedDeviceType, selectedPropertyId]);
 
   const filteredDevices = devices.filter((device) => {
     if (selectedDeviceType !== 'all' && device.type !== selectedDeviceType) return false;
@@ -52,14 +66,14 @@ function DevicesPage() {
     return true;
   });
 
-  const chartData = generate24HourData(50, 20);
-  const solarChartData = generate24HourData(30, 15);
+  const chartData = chartsData?.electricityTrend ?? [];
+  const solarChartData = chartsData?.solarTrend ?? [];
 
   return (
     <PageLayout>
       <PageHeader
         title="设备监控"
-        subtitle={`共 ${devices.length} 台设备，实时监控运行状态`}
+        subtitle={`共 ${deviceListStats?.total ?? devices.length} 台设备，实时监控运行状态`}
       >
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -204,21 +218,25 @@ function DevicesPage() {
                     <span className="w-3 h-3 rounded-full bg-mint-500" />
                     <span className="text-sm text-slate-600">正常运行</span>
                   </div>
-                  <span className="font-semibold text-mint-600">{devices.filter(d => d.status === 'online').length} 台</span>
+                  <span className="font-semibold text-mint-600">{deviceListStats?.online ?? devices.filter(d => d.status === 'online').length} 台</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-sand-500" />
                     <span className="text-sm text-slate-600">异常警告</span>
                   </div>
-                  <span className="font-semibold text-sand-600">{devices.filter(d => d.status === 'warning').length} 台</span>
+                  <span className="font-semibold text-sand-600">{deviceListStats?.warning ?? devices.filter(d => d.status === 'warning').length} 台</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full bg-red-500" />
                     <span className="text-sm text-slate-600">故障离线</span>
                   </div>
-                  <span className="font-semibold text-red-600">{devices.filter(d => d.status === 'error' || d.status === 'offline').length} 台</span>
+                  <span className="font-semibold text-red-600">
+                    {(deviceListStats?.total ?? devices.length)
+                      - (deviceListStats?.online ?? devices.filter(d => d.status === 'online').length)
+                      - (deviceListStats?.warning ?? devices.filter(d => d.status === 'warning').length)} 台
+                  </span>
                 </div>
               </div>
             </Card.Content>

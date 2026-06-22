@@ -10,7 +10,18 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+coverage
+*.tsbuildinfo
 *.local
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# SQLite runtime sidecars
+data/*.db-shm
+data/*.db-wal
 
 # Editor directories and files
 .vscode/*

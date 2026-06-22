@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CalendarCheck,
@@ -22,22 +23,40 @@ import { cn } from '@/lib/utils';
 
 function StewardDashboard() {
   const navigate = useNavigate();
-  const { bookings, alerts, startPrecooling } = useAppStore();
+  const {
+    bookings,
+    alerts,
+    startPrecooling,
+    todayBookings,
+    fetchTodayBookings,
+    fetchAlerts,
+  } = useAppStore();
 
-  const todayBookings = bookings.filter(b => b.status !== 'checked-out');
-  const upcomingBookings = bookings.filter(b => b.status === 'upcoming');
-  const checkedInBookings = bookings.filter(b => b.status === 'checked-in');
+  useEffect(() => {
+    fetchTodayBookings();
+    fetchAlerts({ acknowledged: false });
+  }, [fetchTodayBookings, fetchAlerts]);
+
+  const todayBookingsList = todayBookings?.bookings ?? bookings.filter(b => b.status !== 'checked-out');
+  const upcomingCount = todayBookings?.counts?.upcoming ?? bookings.filter(b => b.status === 'upcoming').length;
+  const checkedInCount = todayBookings?.counts?.checkedIn ?? bookings.filter(b => b.status === 'checked-in').length;
   const unacknowledgedAlerts = alerts.filter(a => !a.acknowledged);
-  
-  const precoolingNotStarted = upcomingBookings.filter(
+
+  const upcomingBookings = todayBookingsList.filter(b => b.status === 'upcoming');
+
+  const precoolingNotStarted = todayBookings?.precoolingStats?.notStarted ?? upcomingBookings.filter(
     b => !b.precooling?.enabled
-  );
-  const precoolingInProgress = upcomingBookings.filter(
+  ).length;
+  const precoolingInProgress = todayBookings?.precoolingStats?.inProgress ?? upcomingBookings.filter(
     b => b.precooling?.enabled && b.precooling.progress < 100
-  );
-  const precoolingComplete = upcomingBookings.filter(
+  ).length;
+  const precoolingComplete = todayBookings?.precoolingStats?.complete ?? upcomingBookings.filter(
     b => b.precooling?.enabled && b.precooling.progress >= 100
-  );
+  ).length;
+
+  const precoolingNotStartedList = upcomingBookings.filter(b => !b.precooling?.enabled);
+  const precoolingInProgressList = upcomingBookings.filter(b => b.precooling?.enabled && b.precooling.progress < 100);
+  const precoolingCompleteList = upcomingBookings.filter(b => b.precooling?.enabled && b.precooling.progress >= 100);
 
   const handleStartPrecooling = (bookingId: string) => {
     startPrecooling(bookingId);
@@ -55,21 +74,21 @@ function StewardDashboard() {
         subtitle="今日入住安排与设备状态概览"
       >
         <Badge variant="ocean" dot>
-          今日 {todayBookings.length} 个预订
+          今日 {todayBookingsList.length} 个预订
         </Badge>
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="今日入住"
-          value={upcomingBookings.length}
+          value={upcomingCount}
           unit="间"
           icon={CalendarCheck}
           variant="ocean"
         />
         <StatCard
           title="待预冷"
-          value={precoolingNotStarted.length}
+          value={precoolingNotStarted}
           unit="间"
           icon={Thermometer}
           variant="coral"
@@ -77,7 +96,7 @@ function StewardDashboard() {
         />
         <StatCard
           title="预冷中"
-          value={precoolingInProgress.length}
+          value={precoolingInProgress}
           unit="间"
           icon={PlayCircle}
           variant="sand"
@@ -109,7 +128,7 @@ function StewardDashboard() {
             </Card.Header>
             <Card.Content>
               <div className="space-y-4">
-                {todayBookings.map((booking, index) => (
+                {todayBookingsList.map((booking, index) => (
                   <div
                     key={booking.id}
                     className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-ocean-200 hover:bg-ocean-50/30 transition-all"
@@ -123,7 +142,7 @@ function StewardDashboard() {
                       )}>
                         <User className="w-6 h-6" />
                       </div>
-                      {index < todayBookings.length - 1 && (
+                      {index < todayBookingsList.length - 1 && (
                         <div className="absolute top-12 left-1/2 -translate-x-1/2 w-0.5 h-8 bg-slate-200" />
                       )}
                     </div>
@@ -202,7 +221,7 @@ function StewardDashboard() {
               <div className="flex items-center justify-between">
                 <Card.Title>预冷状态总览</Card.Title>
                 <Badge variant="mint" size="sm">
-                  {precoolingComplete.length} 间已就绪
+                  {precoolingComplete} 间已就绪
                 </Badge>
               </div>
             </Card.Header>
@@ -213,21 +232,21 @@ function StewardDashboard() {
                     <CheckCircle className="w-5 h-5 text-mint-500" />
                     <span className="text-sm text-slate-700">预冷完成</span>
                   </div>
-                  <span className="font-bold text-mint-600">{precoolingComplete.length} 间</span>
+                  <span className="font-bold text-mint-600">{precoolingComplete} 间</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-sand-50">
                   <div className="flex items-center gap-3">
                     <PlayCircle className="w-5 h-5 text-sand-500" />
                     <span className="text-sm text-slate-700">预冷进行中</span>
                   </div>
-                  <span className="font-bold text-sand-600">{precoolingInProgress.length} 间</span>
+                  <span className="font-bold text-sand-600">{precoolingInProgress} 间</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl bg-coral-50">
                   <div className="flex items-center gap-3">
                     <Thermometer className="w-5 h-5 text-coral-500" />
                     <span className="text-sm text-slate-700">待开启预冷</span>
                   </div>
-                  <span className="font-bold text-coral-600">{precoolingNotStarted.length} 间</span>
+                  <span className="font-bold text-coral-600">{precoolingNotStarted} 间</span>
                 </div>
               </div>
 

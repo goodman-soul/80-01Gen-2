@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AlertTriangle,
   CheckCircle,
@@ -21,9 +21,17 @@ import { cn } from '@/lib/utils';
 import type { Alert } from '@/types';
 
 function AlertsPage() {
-  const { alerts, acknowledgeAlert, properties } = useAppStore();
+  const { alerts, alertCounts, acknowledgeAlert, properties, fetchAlerts } = useAppStore();
   const [filter, setFilter] = useState<'all' | 'unacknowledged' | 'acknowledged'>('unacknowledged');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
+
+  useEffect(() => {
+    const params: { acknowledged?: boolean; severity?: any } = {};
+    if (filter === 'unacknowledged') params.acknowledged = false;
+    if (filter === 'acknowledged') params.acknowledged = true;
+    if (severityFilter !== 'all') params.severity = severityFilter;
+    fetchAlerts(params);
+  }, [fetchAlerts, filter, severityFilter]);
 
   const filteredAlerts = alerts.filter((alert) => {
     if (filter === 'unacknowledged' && alert.acknowledged) return false;
@@ -167,7 +175,7 @@ function AlertsPage() {
               <div>
                 <p className="text-sm text-slate-500">故障告警</p>
                 <p className="text-2xl font-bold text-slate-800 font-display">
-                  {alerts.filter(a => a.severity === 'error' && !a.acknowledged).length}
+                  {alertCounts?.error ?? alerts.filter(a => a.severity === 'error' && !a.acknowledged).length}
                 </p>
               </div>
             </div>
@@ -182,7 +190,7 @@ function AlertsPage() {
               <div>
                 <p className="text-sm text-slate-500">能耗警告</p>
                 <p className="text-2xl font-bold text-slate-800 font-display">
-                  {alerts.filter(a => a.severity === 'warning' && !a.acknowledged).length}
+                  {alertCounts?.warning ?? alerts.filter(a => a.severity === 'warning' && !a.acknowledged).length}
                 </p>
               </div>
             </div>
@@ -197,7 +205,10 @@ function AlertsPage() {
               <div>
                 <p className="text-sm text-slate-500">已处理</p>
                 <p className="text-2xl font-bold text-slate-800 font-display">
-                  {alerts.filter(a => a.acknowledged).length}
+                  {(alertCounts?.total ?? alerts.length)
+                    - (alertCounts?.error ?? alerts.filter(a => a.severity === 'error' && !a.acknowledged).length)
+                    - (alertCounts?.warning ?? alerts.filter(a => a.severity === 'warning' && !a.acknowledged).length)
+                    - (alertCounts?.info ?? alerts.filter(a => a.severity === 'info' && !a.acknowledged).length)}
                 </p>
               </div>
             </div>
